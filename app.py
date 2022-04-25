@@ -41,7 +41,7 @@ def test():
     connection.close()
     '''
 
-    p = subprocess.run(['python', 'script.py', '10'])
+    p = subprocess.run(args = ['python', 'script.py', '10'], universal_newlines = True, stdout = subprocess.PIPE)
     #print('return code: ', p.returncode)
 
     # Trusted Connection to Named Instance
@@ -66,7 +66,7 @@ def test():
         'unite': "degrés Celcius",
         'return_code': p.returncode
     }
-    #return jsonify(dictionnaire)
+    return p.stdout.splitlines()
 
 if __name__ == "__main__":
     #app.run(debug=True, host = "localhost", port=8050)
