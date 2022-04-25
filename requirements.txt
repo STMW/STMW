@@ -1,4 +1,3 @@
 flask
 pyodbc
-subprocess
 sys
