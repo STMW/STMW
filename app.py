@@ -41,7 +41,7 @@ def test():
     connection.close()
     '''
 
-    p = subprocess.run(args = ['python', 'script.py', '10'], universal_newlines = True, stdout = subprocess.PIPE)
+    p = subprocess.run(args = ['python', './script.py'], universal_newlines = True, stdout = subprocess.PIPE)
     #print('return code: ', p.returncode)
 
     # Trusted Connection to Named Instance
