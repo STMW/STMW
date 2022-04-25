@@ -1,4 +1,4 @@
-import pyodbc
+import pypyodbc
 import sys
 
 #connection = pyodbc.connect(
