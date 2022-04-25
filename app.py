@@ -66,7 +66,7 @@ def test():
         'unite': "degrés Celcius",
         'return_code': p.returncode
     }
-    return p.stdout.splitlines()
+    return jsonify(p.stdout.splitlines())
 
 if __name__ == "__main__":
     #app.run(debug=True, host = "localhost", port=8050)
