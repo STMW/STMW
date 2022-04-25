@@ -15,7 +15,7 @@ username = 'marcel.songo@groupe-esigelec.org@s8server'
 password = '17G2432Qq4LsS8R'
 driver= '{ODBC Driver 17 for SQL Server}'
 
-with pyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
+with pypyodbc.connect('DRIVER='+driver+';SERVER=tcp:'+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password) as conn:
     with conn.cursor() as cursor:
         cursor.execute("SELECT TOP 3 name, collation_name FROM sys.databases")
         row = cursor.fetchone()
