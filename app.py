@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, jsonify
-import pyodbc
+#import pyodbc
 import subprocess
 
 app = Flask(__name__)
@@ -19,7 +19,7 @@ def hello():
     cursor.execute("SELECT TOP 3 name, collation_name FROM sys.databases")
     row = cursor.fetchone()
     
-    return row
+    return str(row[0]) + " " + str(row[1])
 
 @app.route("/api/test")
 def test():
