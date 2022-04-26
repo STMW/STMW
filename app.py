@@ -68,6 +68,11 @@ def test():
     }
     return jsonify(p.stdout.splitlines())
 
+@app.route("/api/analytique")
+def methode_analytique():
+    p = subprocess.run(args = ['python', './analytique.py'], universal_newlines = True, stdout = subprocess.PIPE, stderr=subprocess.PIPE)
+    return jsonify(p.stdout.splitlines())
+
 if __name__ == "__main__":
     #app.run(debug=True, host = "localhost", port=8050)
     app.run()
