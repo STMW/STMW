@@ -2,6 +2,7 @@
 from flask import Flask, jsonify
 import pypyodbc
 import subprocess
+import ast
 
 app = Flask(__name__)
 
@@ -68,10 +69,44 @@ def test():
     }
     return jsonify(p.stdout.splitlines())
 
-@app.route("/api/analytique")
+@app.route("/api/analytique/")
 def methode_analytique():
-    p = subprocess.run(args = ['python', './analytique.py'], universal_newlines = True, stdout = subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.run(args=['python', '-Wignore', './analytique.py'],
+                       universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return jsonify(p.stdout.splitlines())
+
+@app.route('/api/arbre/<testnum>')
+def arbre_de_decision(testnum=0):
+    p = subprocess.Popen(f'python ./arbre.py {testnum}', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    out = out.decode("utf-8")
+    out = out.replace("\'","\"")
+    return ast.literal_eval(out)
+
+@app.route('api/randomForest/')
+def random_forest():
+    p = subprocess.Popen(f'python ./randomForest.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    out = out.decode("utf-8")
+    out = out.replace("\'", "\"")
+    return ast.literal_eval(out)
+
+@app.route('api/regression/')
+def random_forest():
+    p = subprocess.Popen(f'python ./regression.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    out = out.decode("utf-8")
+    out = out.replace("\'", "\"")
+    return ast.literal_eval(out)
+
+@app.route('api/svm/')
+def random_forest():
+    p = subprocess.Popen(f'python ./svm.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+    out = out.decode("utf-8")
+    out = out.replace("\'", "\"")
+    return ast.literal_eval(out)
+
 
 if __name__ == "__main__":
     #app.run(debug=True, host = "localhost", port=8050)
