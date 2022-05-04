@@ -100,7 +100,7 @@ def random_forest():
     return ast.literal_eval(out)
 
 @app.route('/api/svm/')
-def random_forest():
+def svm():
     p = subprocess.Popen(f'python ./svm.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     out = out.decode("utf-8")
