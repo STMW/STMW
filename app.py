@@ -92,7 +92,7 @@ def random_forest():
     return ast.literal_eval(out)
 
 @app.route('/api/regression/')
-def random_forest():
+def regression():
     p = subprocess.Popen(f'python ./regression.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     out = out.decode("utf-8")
