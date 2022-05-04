@@ -83,7 +83,7 @@ def arbre_de_decision(testnum=0):
     out = out.replace("\'","\"")
     return ast.literal_eval(out)
 
-@app.route('api/randomForest/')
+@app.route('/api/randomForest/')
 def random_forest():
     p = subprocess.Popen(f'python ./randomForest.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
@@ -91,7 +91,7 @@ def random_forest():
     out = out.replace("\'", "\"")
     return ast.literal_eval(out)
 
-@app.route('api/regression/')
+@app.route('/api/regression/')
 def random_forest():
     p = subprocess.Popen(f'python ./regression.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
@@ -99,7 +99,7 @@ def random_forest():
     out = out.replace("\'", "\"")
     return ast.literal_eval(out)
 
-@app.route('api/svm/')
+@app.route('/api/svm/')
 def random_forest():
     p = subprocess.Popen(f'python ./svm.py', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
