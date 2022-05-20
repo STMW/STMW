@@ -1,21 +1,30 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[32]:
 
-
+import sys
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 import datetime
 import warnings
-import sys
 warnings.filterwarnings('ignore')
 
-# 
+p_criterion = sys.argv[1]
+p_splitter = sys.argv[2]
+p_max_depth = None if sys.argv[3] == "None" else int(sys.argv[3])
+p_min_samples_split = float(sys.argv[4])
+p_min_samples_leaf = int(sys.argv[5])
+p_min_weight_fraction_leaf = float(sys.argv[6])
+p_max_features = None if sys.argv[7] == "None" else int(sys.argv[7])
+p_random_state = None if sys.argv[8] == "None" else int(sys.argv[8])
+p_max_leaf_nodes = None if sys.argv[9] == "None" else int(sys.argv[9])
+p_min_impurity_decrease = float(sys.argv[10])
+p_ccp_alpha = float(sys.argv[11])
 
-# In[2]:
-
+# In[33]:
 
 
 pathfile=r'data_anonymous'
@@ -34,10 +43,12 @@ reflist=reflist.rename(columns={'refListId':'refListId_actual'})
 reflist['refListId_actual']=reflist['refListId_actual'].apply(lambda x:int(x[8:]))
 Q_refListId_actual=reflist.groupby('refListId_actual')['Epc'].nunique().rename('Q refListId_actual').reset_index(drop=False)
 reflist=pd.merge(reflist,Q_refListId_actual,on='refListId_actual',how='left')
+reflist.head()
+
 
 # 
 
-# In[3]:
+# In[34]:
 
 
 # pathfile=r'data_anonymous'
@@ -47,7 +58,7 @@ df=pd.DataFrame()
 # 
 files=os.listdir(pathfile)
 for file in files:
-    
+   
     if file.startswith('ano_APTags'):
         temp=pd.read_csv(os.path.join(pathfile,file),sep=',')
         df=df.append(temp)
@@ -60,10 +71,13 @@ df=df[['LogTime', 'Epc', 'Rssi', 'Ant']]
 Ant_loc=pd.DataFrame({'Ant':[1,2,3,4],'loc':['in','in','out','out']})
 df=pd.merge(df,Ant_loc,on=['Ant'])
 df=df.sort_values('LogTime').reset_index(drop=True)
+df.head()
 
 
-# In[4]:
+# In[35]:
 
+
+len(df)
 
 
 # In[ ]:
@@ -72,7 +86,7 @@ df=df.sort_values('LogTime').reset_index(drop=True)
 
 
 
-# In[5]:
+# In[36]:
 
 
 # timing: photocells a time window for each box: start/stop (ciuchStart, ciuchStop)
@@ -87,19 +101,22 @@ timing['timestampStop']=timing['timestampStop'].astype(float)
 timing=timing.sort_values('date')
 timing.loc[:,'refListId']=timing.loc[:,'refListId'].apply(lambda x:int(x[8:]))
 timing=timing[['refListId', 'ciuchStart', 'ciuchStop']]
+timing[:1]
 
 
-# In[6]:
+# In[37]:
 
 
 len(timing)
 
 
-# In[7]:
+# In[38]:
 
 
+timing[:12]
 
-# In[8]:
+
+# In[39]:
 
 
 # ciuchStart_up starts upstream ciuchStart, half way in between the previous stop and the actual start
@@ -115,15 +132,17 @@ timing['refListId_last']=timing['refListId_last'].astype(int)
 timing['ciuchStopdown']= timing['ciuchStartup'].shift(-1)
 timing.loc[len(timing)-1,'ciuchStopdown']=timing.loc[len(timing)-1,'ciuchStop']+datetime.timedelta(seconds=10)
 timing=timing[['refListId', 'refListId_last','ciuchStartup', 'ciuchStart','ciuchStop','ciuchStopdown']]
+timing.head()
 
 
-# In[9]:
+# In[40]:
 
 
 # box 0 always starts
+timing[timing['refListId']==0].head()
 
 
-# In[10]:
+# In[41]:
 
 
 # t0_run = a new run starts when box 0 shows up
@@ -136,12 +155,16 @@ t0_run=t0_run.sort_values('t0_run')
 timing=pd.merge_asof(timing,t0_run,left_on='ciuchStartup',right_on='t0_run', direction='backward')
 timing=timing.sort_values('ciuchStop')
 timing=timing[['run', 'refListId', 'refListId_last', 'ciuchStartup','ciuchStart','ciuchStop','ciuchStopdown','t0_run']]
+timing.head()
 
 
-# In[11]:
+# In[42]:
 
 
-# In[12]:
+timing[:12]
+
+
+# In[43]:
 
 
 #plt.figure(figsize=(12,6))
@@ -151,9 +174,10 @@ down=(timing['ciuchStopdown']-timing['ciuchStop']).apply(lambda x:x.total_second
 #plt.boxplot([up,mid,down],labels=['ciuchStartup > ciuchStart','ciuchStart > ciuchStop','ciuchStop > ciuchStopdown'])
 #plt.grid()
 #plt.title('durations: Startup>Start, Start>Stop, Stop>Stopdown',size=16)
+#plt.show()
 
 
-# In[13]:
+# In[44]:
 
 
 #  full window (ciuchStartup > ciuchStopdown) is sliced in smaller slices
@@ -168,29 +192,32 @@ for i, row in timing .iterrows():
     ciuchStopdown=row['ciuchStopdown']
     steps=4
 #     
-    up=pd.DataFrame(index=pd.date_range(start=ciuchStartup, end=ciuchStart,periods=steps,closed='left')).reset_index(drop=False).rename(columns={'index':'slice'})
+    up=pd.DataFrame(index=pd.date_range(start=ciuchStartup, end=ciuchStart,periods=steps,closed='left'))        .reset_index(drop=False).rename(columns={'index':'slice'})
     up.index=['up_'+str(x) for x in range(steps-1)]
     slices=slices.append(up)
 #     
-    mid=pd.DataFrame(index=pd.date_range(start=ciuchStart, end=ciuchStop,periods=steps,closed='left')).reset_index(drop=False).rename(columns={'index':'slice'})
+    mid=pd.DataFrame(index=pd.date_range(start=ciuchStart, end=ciuchStop,periods=steps,closed='left'))        .reset_index(drop=False).rename(columns={'index':'slice'})
     mid.index=['mid_'+str(x) for x in range(steps-1)]
     slices=slices.append(mid)
 #     
-    down=pd.DataFrame(index=pd.date_range(start=ciuchStop, end=ciuchStopdown,periods=steps,closed='left')).reset_index(drop=False).rename(columns={'index':'slice'})
+    down=pd.DataFrame(index=pd.date_range(start=ciuchStop, end=ciuchStopdown,periods=steps,closed='left'))        .reset_index(drop=False).rename(columns={'index':'slice'})
     down.index=['down_'+str(x) for x in range(steps-1)]
     slices=slices.append(down)
 #     slices=slices.append(up)
 slices=slices.reset_index(drop=False).rename(columns={'index':'slice_id'})
 # 
 timing_slices=pd.merge_asof(slices,timing,left_on='slice',right_on='ciuchStartup',direction='backward')
-timing_slices=timing_slices[['run', 'refListId', 'refListId_last','slice_id','slice','ciuchStartup', 'ciuchStart', 'ciuchStop', 'ciuchStopdown','t0_run']]
+timing_slices=timing_slices[['run', 'refListId', 'refListId_last','slice_id','slice',                               'ciuchStartup', 'ciuchStart', 'ciuchStop', 'ciuchStopdown','t0_run']]
 timing_slices.head()
 
 
-# In[14]:
+# In[45]:
 
 
-# In[15]:
+len(timing_slices)
+
+
+# In[46]:
 
 
 # merge between df and timing
@@ -214,6 +241,14 @@ df_timing_slices=df_timing_slices.sort_values('slice').reset_index(drop=True)
 df_timing_slices=df_timing_slices[['run', 'Epc','refListId', 'refListId_last', 'ciuchStartup','slice_id','slice','LogTime',                       'ciuchStart','ciuchStop', 'ciuchStopdown', 'Rssi', 'loc','t0_run']]
 
 
+# In[47]:
+
+
+# 
+
+
+# In[48]:
+
 
 # df_timing_slices=pd.merge(df_timing_slices, reflist, on='Epc',how='left')
 # df_timing_slices = df_timing_slices [ ~((df_timing_slices['refListId']==0) & (df_timing_slices['refListId_actual']==9)) ]
@@ -225,18 +260,22 @@ df_timing_slices=df_timing_slices[['run', 'Epc','refListId', 'refListId_last', '
 # df_timing_slices=df_timing_slices.drop(['refListId_actual','Q refListId_actual'],axis=1)
 
 
-# In[18]:
+# In[49]:
 
 
-runs_out=df_timing_slices.groupby('run')['refListId'].nunique().rename('Q refListId').reset_index(drop=False)
+runs_out=df_timing_slices .groupby('run')['refListId'].nunique().rename('Q refListId').reset_index(drop=False)
+runs_out[runs_out['Q refListId']!=10]
 
-# In[19]:
+
+# In[50]:
 
 
 current_last_windows=timing_slices.drop_duplicates(['run','refListId','refListId_last'])
 current_last_windows=current_last_windows[['run','refListId','refListId_last','ciuchStop']].reset_index(drop=True)
+current_last_windows[:1]
 
-# In[20]:
+
+# In[51]:
 
 
 # runs 16 23 32 40 have missing boxes: discarded
@@ -251,186 +290,160 @@ df_timing_slices=df_timing_slices.sort_values(['LogTime','Epc'])
 # 
 
 
-# In[22]:
+# In[52]:
 
-# In[23]:
+
+len(timing),len(timing_slices), len(df_timing_slices)
+
+
+# In[53]:
+
+
+df_timing_slices[:1]
+
+
+# In[54]:
 
 
 # df_timing_slices['dt']=
 df_timing_slices['dt']=(df_timing_slices['LogTime']-df_timing_slices['t0_run']).apply(lambda x:x.total_seconds())
 
 
-# In[24]:
-
-# In[25]:
+# In[55]:
 
 
-# 
-# df_timing_threshold
-# 
-
-
-# In[26]:
+df_timing_slices[:1]
 
 
 rssi_threshold=-110
 df_timing_slices_threshold=df_timing_slices[df_timing_slices['Rssi']>rssi_threshold]
 
+round(100*df_timing_slices_threshold.reset_index(drop=False).groupby(['run','loc'])['Epc'].nunique().groupby('loc').mean()    /reflist['Epc'].nunique(),2)
 
-# In[27]:
-
-
-# readrate
-# readrate
-#round(100*df_timing_slices_threshold.reset_index(drop=False).groupby(['run','loc'])['Epc'].nunique().groupby('loc').mean()    /reflist['Epc'].nunique(),2)
-
-
-# # MON TRAVAIL, LES METHODES DE MACHINE LEARNING #
-
-# In[28]:
-
-
-#import seaborn as sb
-
-
-# In[29]:
+df_timing_slices[df_timing_slices['Epc']=='epc_100']
 
 
 df2=df_timing_slices
 
 
-# **Tout d'abord il nous faut quelques données dont on connait l'emplacement de la boite et des epc afin de réaliser nos opérations de machine learning sur cette nouvelle dataset**
+df_timing_slices['EPC_run'] = df_timing_slices['Epc'].map(str) + '-' + df_timing_slices['run'].map(str) 
+df_timing_slices['EPC_run'].values.tolist()
+df_1 =df_timing_slices.copy()
+df_1_ml=df_timing_slices.copy()
 
-# ## 1) On va modifier la méthode analytique pour construire un dataset avec les classes prédéfinies 
+def PossibleBoxes(EPC) :
+    df_EPC_mid= df_timing_slices[(df_timing_slices['EPC_run']== EPC) & ((df_timing_slices['slice_id']=='mid_0') | (df_timing_slices['slice_id']=='mid_1') | (df_timing_slices['slice_id']=='mid_2') )]
+    df_EPC= df_timing_slices[(df_timing_slices['EPC_run']== EPC)]
+    if(len(df_EPC_mid)>0):
+        df_percent = df_EPC_mid
+    else:
+        df_percent = df_EPC
+    df_percent = 100*( df_percent.refListId.value_counts() /  df_percent.refListId.count())
 
-# ### 1.1) Réécriture de la méthode analytique
-
-# In[30]:
-
-
-df_1 =df_timing_slices
-df_1['EPC'] = df_1['Epc'].map(str) + '-' + df_1['run'].map(str) 
-df_1['EPC'].values.tolist()
-
-
-
-# In[31]:
+    return df_percent
 
 
-def zert (x) :
-    
-    df_epc=df_timing_slices[df_timing_slices['EPC']== x ]
-    df_epc_in= df_epc[df_epc['loc']== 'in']
-    df_epc_out= df_epc[df_epc['loc']== 'out']
-    #return df_epc
-    if (df_epc_in.shape[0] > df_epc_out.shape[0]) :
-        return 0
-    elif (df_epc_in.shape[0] < df_epc_out.shape[0]) :
-        return 0
+# In[64]:
+
+
+PossibleBoxes('epc_68-39')
+
+
+# In[65]:
+
+
+def BoxbyAnaticalMethod(EPC) : 
+    return int(PossibleBoxes(EPC).index[0])
+        #if(zert(EPC)!=1) :
+            #return None
+        #else :
+
+
+# In[66]:
+
+
+BoxbyAnaticalMethod('epc_0-39')
+
+
+df_1.drop_duplicates( subset ="EPC_run", keep = 'first', inplace=True)
+
+
+
+
+df_1['Box_prediction']=[BoxbyAnaticalMethod(EPC) for EPC in df_1['EPC_run'].values]
+
+
+df_1=df_1.merge(reflist, on = ['Epc'])
+
+
+df_1['GOOD_Prediction']=df_1['Box_prediction']==df_1['refListId_actual']
+dfbox_percent = 100*( df_1.GOOD_Prediction.value_counts() /  df_1.GOOD_Prediction.count())
+dfbox_percent
+
+
+df_false =df_1.copy()
+
+
+# In[73]:
+
+
+df_false['BAD_Prediction']=df_false['Box_prediction']!=df_false['refListId_actual']
+dfbox2_percent = 100*( df_false.BAD_Prediction.value_counts() /  df_false.BAD_Prediction.count())
+dfbox2_percent
+
+
+# In[74]:
+
+
+df_false1=df_false[df_false['BAD_Prediction'] == True]
+
+df_true1=df_false[df_false['BAD_Prediction'] == False]
+df_true1
+
+
+df_1_ml=df_timing_slices.copy()
+
+
+# In[76]:
+
+
+df_1_ml=df_1_ml[df_1_ml.slice_id.isin(['mid_0', 'mid_1', 'mid_2'])]
+
+
+# In[77]:
+
+
+df_1_ml["slice_id"]="mid"
+
+
+# In[78]:
+
+
+df_1_ml['run_window'] = df_1_ml['run'].map(str) + '_' + df_1_ml['slice_id'].map(str) 
+
+df_1_ml=df_1_ml.merge(reflist, on = ['Epc'])
+
+
+
+
+
+df_1_ml['classe']=0
+for i in range(len(df_1_ml)-1):
+    if (df_1_ml.loc[i,'refListId']==df_1_ml.loc[i,'refListId_actual']):
+        df_1_ml.loc[i,'classe']=1
     else :
-        return 1
-    #return df5_in.shape[0] > df5_out.shape[0]
-    
-    
-#print(zert('epc_0-1'))
+        df_1_ml.loc[i,'classe']=0  
 
 
-# In[32]:
+df_tree_class=df_1_ml[['loc','Q refListId_actual','refListId_actual','Rssi','run','refListId','refListId_last','classe']]
+df_tree_class['loc']=df_tree_class['loc'].map({'in':1,'out':0})
 
 
-zerts = []
-epcs = df_1['EPC'].unique()
-df_x = pd.DataFrame()
-for i in epcs : 
-    zerts = zerts + [zert(i)]
-zert(df_1.iloc[1,15])
+X = df_tree_class.iloc[:,0:7] #les caractéristiques
+y = df_tree_class.iloc[:, 7]  #les résulats (classes)
 
 
-# In[33]:
-
-
-# ### 1.2 ) on suprime les lignes où l'epc apparait deux fois dans le même run
-
-# df_1.drop_duplicates( subset ="EPC", keep = 'first', inplace=True)
-
-# In[ ]:
-
-
-
-
-
-# ### 1.3) On peut apliquer la méthode sur chacune des lignes du nouveau dataset
-
-# In[34]:
-
-
-# df_1.loc[3,'loc_epc']
-
-# In[35]:
-
-
-compteur= 0
-for i in range(36318) :   
-    df_1.loc[i,'loc_epc']=zert(df_1.iloc[i,15])
-
-
-# In[36]:
-
-
-# In[37]:
-
-
-df_1.drop_duplicates(keep = 'first', inplace=True)
-
-
-# In[38]:
-
-# ## 2) Essayons de déterminer des dépendances pour utiliser les méthodes de machine learning les plus pertinantes
-
-# ### 2.1) En réalisant une étude graphique
-
-# In[39]:
-
-
-#sb.pairplot(data=df_1)
-
-
-# ### 2.2) En réalisant une étude à l'aide d'une matrice de corrélation(nous avons maintenant la  colonne loc_epc qui représente la position de l'epc)
-
-# In[40]:
-
-
-#import seaborn as sb
-
-corr = df_1.corr()
-#corrMat = plt.matshow(corr, fignum = 2)
-#plt.xticks(range(len(corr.columns)), corr.columns, rotation=90)
-#plt.yticks(range(len(corr.columns)), corr.columns)
-#sb.heatmap(corr,annot=True)
-#plt.show()
-
-
-# ## 3) Application des modèles ##
-
-# In[41]:
-
-# In[42]:
-
-
-# In[43]:
-
-
-df_tree_class=df_1.drop(columns=["Epc","EPC","loc","ciuchStartup","LogTime","ciuchStart","ciuchStop","ciuchStopdown","slice_id","t0_run","slice"])
-
-
-# In[44]:
-
-
-X = df_tree_class.iloc[:,0:5] #les caractéristiques
-y = df_tree_class.iloc[:, 5]  #les résulats (classes)
-
-
-# In[45]:
+# In[96]:
 
 
 from sklearn.model_selection import train_test_split
@@ -441,91 +454,71 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10)
 
 # **Fonction permettant de trouver les paramètres les plus performants**
 
-# In[46]:
+# In[97]:
 
 
 from sklearn.tree import DecisionTreeClassifier
-#from sklearn.model_selection import GridSearchCV
-
-'''
-def dtree_grid_search(X, y, nfolds):
-    #create a dictionary of all values we want to test
-    param_grid = { 'criterion':['gini','entropy'],'max_depth': np.arange(3, 15)}
-    # decision tree model
-    dtree_model=DecisionTreeClassifier()
-    #use gridsearch to test all values
-    dtree_gscv = GridSearchCV(dtree_model, param_grid, cv=nfolds)
-    #fit model to data
-    dtree_gscv.fit(X, y)
-    return dtree_gscv.best_params_
-'''
-
-# In[47]:
 
 
-#dtree_grid_search(X,y,5)
-
-
-# In[48]:
-
-
-tree_clf=DecisionTreeClassifier(max_depth=6)
+tree_clf=DecisionTreeClassifier(criterion=p_criterion, splitter=p_splitter,max_depth=p_max_depth,
+                                min_samples_split=0.9,min_samples_leaf=p_min_samples_leaf,
+                                min_weight_fraction_leaf=p_min_weight_fraction_leaf,max_features=p_max_features,
+                                random_state=p_random_state,max_leaf_nodes=p_max_leaf_nodes,
+                                min_impurity_decrease=p_min_impurity_decrease)
 tree_clf.fit(X,y)
 
 
-# In[49]:
 
-fn=[ 'run','refListId', 'refListId_last', 'Rssi','dt','loc_epc']
+import matplotlib.pyplot as plt
+from sklearn import tree
+fn=[ 'loc','Q refListId_actual','refListId_actual','Rssi','run','refListId','refListId_last']
 cn=['0', '1']
-#fig, axes = plt.subplots(nrows = 1,ncols = 1,figsize = (4,4), dpi=200)
-#tree.plot_tree(tree_clf, feature_names = fn, class_names=cn,filled = True);
+fig, axes = plt.subplots(nrows = 1,ncols = 1,figsize = (4,4), dpi=200)
+#tree.plot_tree(tree_clf,feature_names = fn, class_names=cn,filled = True);
 #fig.savefig('imagename.png')
 
 
 # **Evaluation du modèle(score)**
 
-# In[50]:
+# In[111]:
 
 
-#print(tree_clf.score(X_test, y_test))
 
 
 # **Matrice de confusion**
 
-# In[51]:
+# In[112]:
 
 
 y_pred = tree_clf.predict(X_test)
 
 
-# In[52]:
+# In[113]:
 
 
 from sklearn.metrics import confusion_matrix
-confusion_matrix(y_test, y_pred)
+confusion_matrix(y_test,y_pred)
+
+
+# In[114]:
+
+
+from sklearn.metrics import f1_score
+#f1_score(y_test,y_pred)
 
 
 # **On créé un dictionnaire pour l'affichage sur l'interface**
 
-# In[53]:
-
-mon_dictionnaire = {"score":tree_clf.score(X_test, y_test),
-                    "TN":confusion_matrix(y_test,y_pred)[0][0],
-                    "FP":confusion_matrix(y_test,y_pred)[0][1],
-                    "FN":confusion_matrix(y_test,y_pred)[1][0],
-                    "TP":confusion_matrix(y_test,y_pred)[1][1],
-                    "testNum": sys.argv[1]}
+# In[115]:
 
 
-# In[54]:
+mon_dictionnaire = {"score":f1_score(y_test,y_pred),"TN":confusion_matrix(y_test,y_pred)[0][0],"FP":confusion_matrix(y_test,y_pred)[0][1],"FN":confusion_matrix(y_test,y_pred)[1][0],"TP":confusion_matrix(y_test,y_pred)[1][1]}
+
+
+# In[116]:
+
 
 print(mon_dictionnaire)
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
