@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[6]:
+# In[2]:
 
-
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,9 +14,14 @@ warnings.filterwarnings('ignore')
 
 # 
 
-# In[7]:
-
-
+p_C = float(sys.argv[1])
+p_kernel = sys.argv[2]
+p_degree = int(sys.argv[3])
+p_gamma = sys.argv[4]
+p_probability = True if sys.argv[5]=="True" else False
+p_tol = float(sys.argv[6])
+p_max_iter = int(sys.argv[7])
+p_random_state = None if sys.argv[8]=="None" else int(sys.argv[8])
 
 pathfile=r'data_anonymous'
 
@@ -25,7 +30,7 @@ reflist=pd.DataFrame()
 # 
 files=os.listdir(pathfile)
 for file in files:
-    
+   
     if file.startswith('reflist_'):
         temp=pd.read_csv(os.path.join(pathfile,file),sep=',').reset_index(drop=True)[['Epc']]
         temp['refListId']=file.split('.')[0]
@@ -39,7 +44,7 @@ reflist.head()
 
 # 
 
-# In[8]:
+# In[4]:
 
 
 # pathfile=r'data_anonymous'
@@ -65,7 +70,7 @@ df=df.sort_values('LogTime').reset_index(drop=True)
 df.head()
 
 
-# In[9]:
+# In[5]:
 
 
 len(df)
@@ -77,7 +82,7 @@ len(df)
 
 
 
-# In[10]:
+# In[6]:
 
 
 # timing: photocells a time window for each box: start/stop (ciuchStart, ciuchStop)
@@ -95,19 +100,19 @@ timing=timing[['refListId', 'ciuchStart', 'ciuchStop']]
 timing[:1]
 
 
-# In[11]:
+# In[7]:
 
 
 len(timing)
 
 
-# In[12]:
+# In[8]:
 
 
 timing[:12]
 
 
-# In[13]:
+# In[9]:
 
 
 # ciuchStart_up starts upstream ciuchStart, half way in between the previous stop and the actual start
@@ -126,14 +131,14 @@ timing=timing[['refListId', 'refListId_last','ciuchStartup', 'ciuchStart','ciuch
 timing.head()
 
 
-# In[14]:
+# In[10]:
 
 
 # box 0 always starts
 timing[timing['refListId']==0].head()
 
 
-# In[15]:
+# In[11]:
 
 
 # t0_run = a new run starts when box 0 shows up
@@ -149,13 +154,13 @@ timing=timing[['run', 'refListId', 'refListId_last', 'ciuchStartup','ciuchStart'
 timing.head()
 
 
-# In[16]:
+# In[12]:
 
 
 timing[:12]
 
 
-# In[17]:
+# In[13]:
 
 
 #plt.figure(figsize=(12,6))
@@ -165,10 +170,10 @@ down=(timing['ciuchStopdown']-timing['ciuchStop']).apply(lambda x:x.total_second
 #plt.boxplot([up,mid,down],labels=['ciuchStartup > ciuchStart','ciuchStart > ciuchStop','ciuchStop > ciuchStopdown'])
 #plt.grid()
 #plt.title('durations: Startup>Start, Start>Stop, Stop>Stopdown',size=16)
+#plt.show()
 
 
-
-# In[18]:
+# In[14]:
 
 
 #  full window (ciuchStartup > ciuchStopdown) is sliced in smaller slices
@@ -202,13 +207,13 @@ timing_slices=timing_slices[['run', 'refListId', 'refListId_last','slice_id','sl
 timing_slices.head()
 
 
-# In[19]:
+# In[15]:
 
 
 len(timing_slices)
 
 
-# In[20]:
+# In[16]:
 
 
 # merge between df and timing
@@ -232,13 +237,13 @@ df_timing_slices=df_timing_slices.sort_values('slice').reset_index(drop=True)
 df_timing_slices=df_timing_slices[['run', 'Epc','refListId', 'refListId_last', 'ciuchStartup','slice_id','slice','LogTime',                       'ciuchStart','ciuchStop', 'ciuchStopdown', 'Rssi', 'loc','t0_run']]
 
 
-# In[21]:
+# In[17]:
 
 
 # 
 
 
-# In[22]:
+# In[18]:
 
 
 # df_timing_slices=pd.merge(df_timing_slices, reflist, on='Epc',how='left')
@@ -251,14 +256,14 @@ df_timing_slices=df_timing_slices[['run', 'Epc','refListId', 'refListId_last', '
 # df_timing_slices=df_timing_slices.drop(['refListId_actual','Q refListId_actual'],axis=1)
 
 
-# In[23]:
+# In[19]:
 
 
 runs_out=df_timing_slices .groupby('run')['refListId'].nunique().rename('Q refListId').reset_index(drop=False)
 runs_out[runs_out['Q refListId']!=10]
 
 
-# In[24]:
+# In[20]:
 
 
 current_last_windows=timing_slices.drop_duplicates(['run','refListId','refListId_last'])
@@ -266,7 +271,7 @@ current_last_windows=current_last_windows[['run','refListId','refListId_last','c
 current_last_windows[:1]
 
 
-# In[25]:
+# In[21]:
 
 
 # runs 16 23 32 40 have missing boxes: discarded
@@ -281,32 +286,32 @@ df_timing_slices=df_timing_slices.sort_values(['LogTime','Epc'])
 # 
 
 
-# In[26]:
+# In[22]:
 
 
 len(timing),len(timing_slices), len(df_timing_slices)
 
 
-# In[27]:
+# In[23]:
 
 
 df_timing_slices[:1]
 
 
-# In[28]:
+# In[24]:
 
 
 # df_timing_slices['dt']=
 df_timing_slices['dt']=(df_timing_slices['LogTime']-df_timing_slices['t0_run']).apply(lambda x:x.total_seconds())
 
 
-# In[29]:
+# In[25]:
 
 
 df_timing_slices[:1]
 
 
-# In[30]:
+# In[26]:
 
 
 # 
@@ -314,26 +319,30 @@ df_timing_slices[:1]
 # 
 
 
-# In[31]:
+# In[27]:
 
 
 rssi_threshold=-110
 df_timing_slices_threshold=df_timing_slices[df_timing_slices['Rssi']>rssi_threshold]
 
 
-# In[32]:
+# In[28]:
 
 
 # readrate
 # readrate
 round(100*df_timing_slices_threshold.reset_index(drop=False).groupby(['run','loc'])['Epc'].nunique().groupby('loc').mean()    /reflist['Epc'].nunique(),2)
 
+df_timing_slices[df_timing_slices['Epc']=='epc_100']
+# # 1 - LA METHODE ANALYTIQUE #
 
-# # MON TRAVAIL, LES METHODES DE MACHINE LEARNING #
+# In[29]:
 
-# In[33]:
 
-# In[34]:
+import seaborn as sb
+
+
+# In[30]:
 
 
 df2=df_timing_slices
@@ -345,44 +354,64 @@ df2=df_timing_slices
 
 # ### 1.1) Réécriture de la méthode analytique
 
+# In[31]:
+
+
+
+df_timing_slices['EPC_run'] = df_timing_slices['Epc'].map(str) + '-' + df_timing_slices['run'].map(str) 
+df_timing_slices['EPC_run'].values.tolist()
+df_1 =df_timing_slices.copy()
+df_1_ml=df_timing_slices.copy()
+#print(zert('epc_0-85'))
+#df_1['run'].value_counts().sort_values()
+
+
+# In[32]:
+
+
+def PossibleBoxes(EPC) :
+    df_EPC_mid= df_timing_slices[(df_timing_slices['EPC_run']== EPC) & ((df_timing_slices['slice_id']=='mid_0') | (df_timing_slices['slice_id']=='mid_1') | (df_timing_slices['slice_id']=='mid_2') )]
+    df_EPC= df_timing_slices[(df_timing_slices['EPC_run']== EPC)]
+    if(len(df_EPC_mid)>0):
+        df_percent = df_EPC_mid
+    else:
+        df_percent = df_EPC
+    df_percent = 100*( df_percent.refListId.value_counts() /  df_percent.refListId.count())
+
+    return df_percent
+
+
+# In[34]:
+
+
+PossibleBoxes('epc_68-39')
+
+
 # In[35]:
 
 
-df_1 =df_timing_slices
-df_1['EPC'] = df_1['Epc'].map(str) + '-' + df_1['run'].map(str) 
-df_1['EPC'].values.tolist()
+def BoxbyAnaticalMethod(EPC) : 
+    return int(PossibleBoxes(EPC).index[0])
+        #if(zert(EPC)!=1) :
+            #return None
+        #else :
 
 
 # In[36]:
 
 
-def zert (x) :
-    
-    df_epc=df_timing_slices[df_timing_slices['EPC']== x ]
-    df_epc_in= df_epc[df_epc['loc']== 'in']
-    df_epc_out= df_epc[df_epc['loc']== 'out']
-    #return df_epc
-    if (df_epc_in.shape[0] > df_epc_out.shape[0]) :
-        return 0
-    elif (df_epc_in.shape[0] < df_epc_out.shape[0]) :
-        return 0
-    else :
-        return 1
-    #return df5_in.shape[0] > df5_out.shape[0]
-    
+BoxbyAnaticalMethod('epc_0-39')
 
 
+# ### 1.2 ) on supprime les lignes où l'epc apparait deux fois dans le même run
 
 # In[37]:
 
 
-zerts = []
-epcs = df_1['EPC'].unique()
-df_x = pd.DataFrame()
-for i in epcs : 
-    zerts = zerts + [zert(i)]
-zert(df_1.iloc[1,15])
+df_1.drop_duplicates( subset ="EPC_run", keep = 'first', inplace=True)
 
+
+# ### 1.3) On peut apliquer la méthode sur chacune des lignes du nouveau dataset
 
 # In[38]:
 
@@ -390,43 +419,122 @@ zert(df_1.iloc[1,15])
 df_1
 
 
-# ### 1.2) On peut apliquer la méthode sur chacune des lignes du nouveau dataset
+# ### Application de la méthode analytique sur le dataset complet 
 
 # In[39]:
 
 
-df_1
+df_1['Box_prediction']=[BoxbyAnaticalMethod(EPC) for EPC in df_1['EPC_run'].values]
+#df_1['Box_prediction'].value_counts()
+#[BoxbyAnaticalMethod(EPC) for EPC in df_1['EPC_run'].values]
 
+
+# ### Comparaison des boîtes prédites avec celle du dataframe reflist
 
 # In[40]:
 
 
-compteur= 0
-for i in range(36318) :   
-    df_1.loc[i,'loc_epc']=zert(df_1.iloc[i,15])
+df_1=df_1.merge(reflist, on = ['Epc'])
+df_1
 
+
+# ### Pourcentage de bonnes et mauvaises prédictions
 
 # In[41]:
 
 
-df_1
+df_1['GOOD_Prediction']=df_1['Box_prediction']==df_1['refListId_actual']
+dfbox_percent = 100*( df_1.GOOD_Prediction.value_counts() /  df_1.GOOD_Prediction.count())
+dfbox_percent
 
 
-# ### 1.3 ) on suprime les lignes où l'epc apparait deux fois dans le même run
+# ### Création du dataframe pour récupérer les mauvaises prédictions
 
 # In[42]:
 
 
-df_1.drop_duplicates(keep = 'first', inplace=True)
+df_false =df_1.copy()
 
 
 # In[43]:
 
 
-df_1
+df_false['BAD_Prediction']=df_false['Box_prediction']!=df_false['refListId_actual']
+dfbox2_percent = 100*( df_false.BAD_Prediction.value_counts() /  df_false.BAD_Prediction.count())
+dfbox2_percent
 
 
-# ## 2) Application du modèle - SVM ##
+# In[44]:
+
+
+df_false1=df_false[df_false['BAD_Prediction'] == True]
+#df_false1
+
+
+# # 2- MON TRAVAIL, LES METHODES DE MACHINE LEARNING #
+
+# ### 2.1 )Création du dataframe pour récupérer les bonnes prédictions
+df_true1=df_false[df_false['BAD_Prediction'] == False]
+df_true1
+# #### 2.2) On se place sur une seule fenêtre
+
+# In[45]:
+
+
+df_1_ml=df_timing_slices.copy()
+
+
+# In[46]:
+
+
+#df_1_ml=df_1_ml[df_1_ml.slice_id.isin(['mid_0', 'mid_1', 'mid_2'])]
+df_1_ml=df_1_ml[df_1_ml.slice_id.isin(['mid_1', 'mid_2'])]
+
+
+# In[47]:
+
+
+df_1_ml["slice_id"]="mid"
+
+
+# In[48]:
+
+
+df_1_ml['run_window'] = df_1_ml['run'].map(str) + '_' + df_1_ml['slice_id'].map(str) 
+#df_1_ml['run_window'].values.tolist()
+
+
+# In[49]:
+
+
+df_1_ml=df_1_ml.merge(reflist, on = ['Epc'])
+
+
+# In[50]:
+
+
+df_1_ml
+
+
+#    
+
+# **On peut maintenant créer une colonne classe nous permettant de savoir si le tag réalisé correspond à un epc dont la boite se trouve dans la zone in(classe 1) ou non (classe 0)** 
+
+# In[51]:
+
+
+df_1_ml['classe']=0
+for i in range(len(df_1_ml)-1):
+    if (df_1_ml.loc[i,'refListId']==df_1_ml.loc[i,'refListId_actual']):
+        df_1_ml.loc[i,'classe']=1
+    else :
+        df_1_ml.loc[i,'classe']=0  
+df_1_ml
+
+
+#   
+
+# ## 3) Application des modèles ##
 
 # In[52]:
 
@@ -435,20 +543,24 @@ import numpy as np
 from sklearn import datasets
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 
 
 # In[53]:
 
 
-svm_clf = Pipeline ( [ ( "scaler" , StandardScaler ( ) ) ,( "linear_svc" , LinearSVC(C=100, loss="hinge" , random_state=50)) ,] )
+#svm_clf = Pipeline ( [ ( "scaler" , StandardScaler ( ) ) ,( "linear_svc" ,
+#            LinearSVC(C=p_C,)) ] )
+svm_clf = SVC(C=p_C,kernel=p_kernel,degree=p_degree,gamma=p_gamma,
+              probability=p_probability,tol=p_tol,max_iter=p_max_iter,
+              random_state=p_random_state)
 
 
 # In[54]:
 
 
-df4 =df_1[['loc','Rssi','loc_epc']]
+df4 =df_1_ml[['loc','Q refListId_actual','refListId_actual','Rssi','run','refListId','refListId_last','classe']]
 
 
 # In[55]:
@@ -460,19 +572,25 @@ df4
 # In[56]:
 
 
-df4['loc']=df4['loc'].map({'in':1,'out':0})
+df_rdf=df4.copy()
 
 
 # In[57]:
 
 
-df4
+df_rdf['loc']=df_rdf['loc'].map({'in':1,'out':0})
+
+
+# In[58]:
+
+
+df_rdf
 
 
 # In[59]:
 
 
-X_train,X_test,y_train,y_test=train_test_split(df4.drop('loc_epc',axis=1),df4['loc_epc'])
+X_train,X_test,y_train,y_test=train_test_split(df_rdf.drop(['classe'],axis=1),df_rdf['classe'])
 
 
 # In[60]:
@@ -484,36 +602,42 @@ svm_clf.fit(X_train, y_train )
 # **Validation croisée à 3 plis, performance moyenne**
 # 
 
-# In[69]:
+# In[61]:
 
 
 from sklearn.model_selection import cross_val_score
 cross_val_score( svm_clf , X_train , y_train , cv=3,scoring="accuracy" )
 
 
-# **Matrice de confusion.**
+# **Matrice de confusion**
 
-# In[ ]:
+# In[62]:
 
 
 y_pred = svm_clf.predict(X_test)
 
 
-# In[66]:
+# In[63]:
 
 
 from sklearn.metrics import confusion_matrix
 confusion_matrix(y_test,y_pred)
 
 
-# In[70]:
+# In[64]:
 
 
-mon_dictionnaire = {"score":[0.99235014, 0.99235014, 0.99235014],"TN":7911,"FP":0,"FN":64,"TP":0}
+from sklearn.metrics import f1_score
+
+
+# In[65]:
+
+
+mon_dictionnaire = {"score":f1_score(y_test,y_pred),"TN":confusion_matrix(y_test,y_pred)[0][0],"FP":confusion_matrix(y_test,y_pred)[0][1],"FN":confusion_matrix(y_test,y_pred)[1][0],"TP":confusion_matrix(y_test,y_pred)[1][1]}
+
+
+# In[66]:
+
+
 print(mon_dictionnaire)
-
-# In[ ]:
-
-
-
 
